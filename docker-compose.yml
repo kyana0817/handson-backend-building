@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  auth:
+    image: redis:7.0.8
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --requirepass password
+    volumes: 
+      - auth:/data
+
+volumes:
+  auth:
+    driver: local

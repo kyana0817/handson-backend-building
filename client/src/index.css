@@ -1,0 +1,91 @@
+html {
+  background-color: #e2eaec;
+  font-family: 'Murecho', sans-serif;
+  color: #222;
+}
+
+label {
+  display: flex;
+  font-weight: 700;
+  justify-content: space-between;
+  margin-top: 16px;
+  gap: 8px;
+}
+
+input:is([type="text"], [type="password"], [type="email"]) {
+  border: 1px solid #b2b2b2;
+  padding: 4px 8px;
+  font-weight: 500;
+}
+
+input[type="submit"] {
+  font-weight: 700;
+  border: 1px solid #b2b2b2;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+input[type="submit"]:hover {
+  background: #b2b2b2;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+h3 {
+  font-size: 1.17rem;
+}
+
+h4 {
+  font-size: 1rem;
+}
+
+h5 {
+  font-size: .83rem;
+}
+
+h6 {
+  font-size: .67rem;
+}
+
+h1, h2, h3,
+h4, h5, h6 {
+  font-weight: 700;
+}
+
+a {
+  font-size: .67rem;
+  text-decoration: underline;
+}
+
+.authenticate_wrap {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.authenticate_paper {
+  border: 1px solid #b2b2b2;
+  padding: 16px 8px;
+  background: #fff;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.authenticate_heading {
+  text-align: center;
+}
+
+.authenticate_subitem {
+  text-align: right;
+}
+
+.authenticate_button {
+  margin-top: 16px;
+  text-align: right;
+}
