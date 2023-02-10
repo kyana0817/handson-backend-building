@@ -25,6 +25,6 @@ export async function userExist({email, password}) {
   return hashPassword === savedPassword
 }
 
-export async function fetchApplicationId({email}) {
-  return await client.hGet(`user:${email}`, 'applicationId')
+export async function fetchUser(email) {
+  return await client.hGetAll(`user:${email}`)
 }

@@ -2,12 +2,14 @@ import express from 'express'
 import cors from 'cors'
 import {
   jwtIssue,
-  refreshTokenIssue
+  refreshTokenIssue,
+  verify
 } from './jwt.js'
 import { 
   registerUser,
   refreshTokenSet,
-  userExist
+  userExist,
+  fetchUser
 } from './inMemory.js'
 
 const app = express()
@@ -42,8 +44,16 @@ app.post('/login', (req, res) => {
   }
 })
 
-app.post('/auth', (req, res) => {
-  
+app.get('/auth', async (req, res) => {
+  const token = req.header('Authorization')?.replace(/^Bearer/, '')
+  const [verified, data] = verify(token)
+
+  if (verified) {
+    const {password, ...user} = await fetchUser(data.sub)
+    res.json(user)
+  } else {
+    res.json(data)
+  }
 })
 
 app.listen(8800)

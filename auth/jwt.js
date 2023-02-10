@@ -11,12 +11,12 @@ const REFRESH_TIME  = 2592000000
 
 function expireLimit() {
   const date = new Date()
-  return date.getDate() + EXPIRE_TIME
+  return date.getTime() + EXPIRE_TIME
 }
 
 export function refreshLimit() {
   const date = new Date()
-  return date.getDate() + REFRESH_TIME
+  return date.getTime() + REFRESH_TIME
 }
 
 function jwtHeader () {
@@ -27,8 +27,10 @@ function jwtHeader () {
 }
 
 function jwtPayload ({email}) {
+  const date = new Date()
   return base64Encoder(JSON.stringify({
     iss: 'react_handson_connect',
+    iat: date.getTime(),
     sub: email,
     exp: expireLimit()
   })).replace(/={1,2}$/, '')
@@ -36,6 +38,12 @@ function jwtPayload ({email}) {
 
 function jwtSignature (header, payload) {
   return hashKey(`${header}.${payload}`)
+}
+
+function isExpire(expire) {
+  const date = new Date()
+
+  return date.getTime() < expire
 }
 
 export function jwtIssue (profile) {
@@ -62,5 +70,22 @@ export function checkSignature(token) {
 export function parsePayload(token) {
   const [, payload,] = token.split('.')
   
-  return base64Decoder(payload)
+  return JSON.parse(base64Decoder(payload))
+}
+
+
+export function verify(token) {
+  const msg = {message: ''}
+
+  if (checkSignature(token)) {
+    const payload = parsePayload(token)
+
+    if (isExpire(payload.exp)) {
+      return [true, payload]
+    }
+
+    return [false, {message: 'token refresh'}]
+  }
+
+  return [false, {message: 'bad token'}]
 }
