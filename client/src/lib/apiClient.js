@@ -15,18 +15,29 @@ class ApiClient {
   }
 
   async get (path) {
-    return await fetch(`${this.basePath}${path}`, {
+    const res = await fetch(`${this.basePath}${path}`, {
       method: 'get',
       headers: this.headers()
     })
+
+    if (res.ok) {
+      return await res.json()
+    } else {
+      throw new Error()
+    }
   }
 
   async post (path, body) {
-    return await (await fetch(`${this.basePath}${path}`, {
+    const res = await fetch(`${this.basePath}${path}`, {
       method: 'post',
       headers: this.headers(),
       body: JSON.stringify(body)
-    })).json()
+    })
+    if (res.ok) {
+      return await res.json()
+    } else {
+      throw new Error()
+    }
   }
 }
 

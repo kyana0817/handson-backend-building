@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom' 
+import { Link, useNavigate } from 'react-router-dom'
 
 import { signup } from '../lib/auth'
 import apiClient from '../lib/apiClient'
 
 export default function Signup() {
+  const navigate = useNavigate()
   const [form, setForm] = useState({
     username: '',
     email: '',
@@ -21,8 +22,14 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    await signup(form.email, form.password)
-    apiClient.post('/register', form)
+    try {
+      await signup(form.email, form.password)
+      await apiClient.post('/register', form)
+      navigate('/')
+    } catch {
+      //todo
+    }
+
   }
   
   return (

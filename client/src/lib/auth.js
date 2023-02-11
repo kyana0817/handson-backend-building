@@ -2,20 +2,9 @@ import storage from "../utils/storage"
 
 const baseurl = process.env.REACT_APP_AUTH_ENTRYPOINT
 
-export async function test() {
-  const res = await ( await (`${baseurl}`, {
-    method: 'get',
-    headers: {
-      'Content-Type': 'Application/json'
-    }
-  })).json()
-
-  console.log(res)
-
-}
-
-
 export async function signup(email, password) {
+  storage.clear()
+
   const res = await  fetch(`${baseurl}/register`, {
     method: 'post',
     headers: {
