@@ -1,5 +1,6 @@
-const baseurl = process.env.REACT_APP_AUTH_ENTRYPOINT
+import storage from "../utils/storage"
 
+const baseurl = process.env.REACT_APP_AUTH_ENTRYPOINT
 
 export async function test() {
   const res = await ( await  fetch(`${baseurl}`, {
@@ -22,6 +23,6 @@ export async function signup(email, password) {
     },
     body: JSON.stringify({email, password})
   })).json()
-
-  console.log(res)
+  
+  storage.store(res)
 }

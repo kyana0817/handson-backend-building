@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom' 
 
 import { signup } from '../lib/auth'
+import apiClient from '../lib/apiClient'
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -18,9 +19,10 @@ export default function Signup() {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    signup(form.email, form.password)
+    await signup(form.email, form.password)
+    apiClient.post('/register', form)
   }
   
   return (

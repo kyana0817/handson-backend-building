@@ -3,13 +3,32 @@ version: '3'
 services:
   auth:
     image: redis:7.0.8
+    platform: linux/x86_64 
     ports:
       - '6379:6379'
     command: redis-server --requirepass password
     volumes: 
       - auth:/data
     restart: "no"
+  db:
+    image: mysql:8.0.31-debian
+    platform: linux/x86_64 
+    environment:
+      MYSQL_DATABASE: "example"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "password"
+      MYSQL_ROOT_PASSWORD: 'password'
+      TZ: 'Asia/Tokyo'
+    ports:
+      - '3306:3306'
+    volumes:
+      - db:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: "no"
 
 volumes:
   auth:
+    driver: local
+  db:
     driver: local
