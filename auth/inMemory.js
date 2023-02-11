@@ -16,11 +16,14 @@ export function registerUser({email, password}) {
 }
 
 export function setRefreshToken({email}, refreshToken) {
-  client.hSet(`user:${email}`, 'refreshLimit', refreshLimit(), 'refreshToken', refreshToken)
+  client.hSet(`user:${email}`, {
+    refreshLimit: refreshLimit(),
+    refreshToken: refreshToken
+  })
 }
 
 export function setUserAttributes({sub}, attributes) {
-  client.hSet(`user:${sub}`, 'applicationId', attributes.applicationId)
+  client.hSet(`user:${sub}`, attributes)
 }
 
 export async function userExist({email}) {

@@ -25,13 +25,14 @@ app.get('/', (req, res) => {
   registerUser({email: 'example@example.com', password: 'pass1234'})
 })
 
-app.post('/register', (req, res) => {
-  if (userExist(req.body)) {
+app.post('/register', async (req, res) => {
+  if (await userExist(req.body)) {
     res.status(401).json({message: 'already exists'})
   } else {
     registerUser(req.body)
     const accessToken = jwtIssue(req.body)
     const refreshToken = refreshTokenIssue(req.body)
+    console.log(refreshToken)
     setRefreshToken(req.body, refreshToken)
   
     res.json({accessToken, refreshToken})
