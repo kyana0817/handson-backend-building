@@ -1,23 +1,26 @@
 use example;
 
 CREATE TABLE IF NOT EXISTS users (
-  id INT PRIMARY KEY,
+  id INT NOT NULL AUTO_INCREMENT,
   username VARCHAR(32),
-  email VARCHAR(32)
+  email VARCHAR(32),
+  PRIMARY KEY (id) 
 );
 
 CREATE TABLE IF NOT EXISTS posts (
-  id INT PRIMARY KEY,
+  id INT NOT NULL AUTO_INCREMENT,
   user_id INT,
   title VARCHAR(64),
   content TEXT,
+  PRIMARY KEY (id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS comments (
-  id INT PRIMARY KEY,
+  id INT NOT NULL AUTO_INCREMENT,
   post_id INT,
   content TEXT,
+  PRIMARY KEY (id),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 

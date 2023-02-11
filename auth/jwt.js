@@ -75,7 +75,6 @@ export function parsePayload(token) {
 
 
 export function verify(token) {
-  const msg = {message: ''}
 
   if (checkSignature(token)) {
     const payload = parsePayload(token)

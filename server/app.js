@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import mysql from 'mysql2'
+import fetch from 'node-fetch'
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -27,14 +28,34 @@ app.post('/auth', (req, res) => {
   res.json({message: 'Hello World'})
 })
 
-app.post('/register', (req, res) => {
+app.use(async (req, res, next) => {
+  const token = req.header('Authorization')?.replace(/^Bearer /, '')
 
+  if (token) {
+    req.token = token
+    next()
+  } else {
+    res.status(400).json({message: 'Required token'})
+  }
 })
 
-app.get('/test', (req, res) => {
-  connection.query('SELECT 42;', (err, results) => {
-    res.send(results)
-  })
+app.post('/register', (req, res) => {
+  const {username, email} = req.body;
+  connection.query(
+    `INSERT INTO users (username, email) values (?, ?)`,
+    [username, email],
+    async (error, results) => {
+      const auth = await (await fetch ('http://localhost:8800/auth/update', {
+        method: 'post',
+        headers: {
+          'Authorization': `Bearer ${req.token}`,
+          'Content-Type': 'Application/json'
+        },
+        body: JSON.stringify({applicationId: results.insertId})
+      })).json()
+      res.json(auth)
+    }
+  )
 })
 
 app.listen(port, (err) => {

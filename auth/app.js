@@ -7,9 +7,11 @@ import {
 } from './jwt.js'
 import { 
   registerUser,
-  refreshTokenSet,
+  setRefreshToken,
   userExist,
-  fetchUser
+  fetchUser,
+  authenticate,
+  setUserAttributes
 } from './inMemory.js'
 
 const app = express()
@@ -24,19 +26,23 @@ app.get('/', (req, res) => {
 })
 
 app.post('/register', (req, res) => {
-  registerUser(req.body)
-  const accessToken = jwtIssue(req.body)
-  const refreshToken = refreshTokenIssue(req.body)
-  refreshTokenSet(req.body, refreshToken)
-
-  res.json({accessToken, refreshToken})
+  if (userExist(req.body)) {
+    res.status(401).json({message: 'already exists'})
+  } else {
+    registerUser(req.body)
+    const accessToken = jwtIssue(req.body)
+    const refreshToken = refreshTokenIssue(req.body)
+    setRefreshToken(req.body, refreshToken)
+  
+    res.json({accessToken, refreshToken})
+  }
 })
 
 app.post('/login', (req, res) => {
-  if (userExist(req.body)) {
+  if (authenticate(req.body)) {
     const accessToken = jwtIssue(req.body)
     const refreshToken = refreshTokenIssue(req.body)
-    refreshTokenSet(req.body, refreshToken)
+    setRefreshToken(req.body, refreshToken)
   
     res.json({accessToken, refreshToken})
   } else {
@@ -45,7 +51,7 @@ app.post('/login', (req, res) => {
 })
 
 app.use(async (req, res, next) => {
-  const token = req.header('Authorization')?.replace(/^Bearer/, '')
+  const token = req.header('Authorization')?.replace(/^Bearer /, '')
   const [verified, data] = verify(token)
 
   if (verified) {
@@ -62,7 +68,8 @@ app.get('/auth', async (req, res) => {
 })
 
 app.post('/auth/update', async (req, res) => {
-
+  setUserAttributes(req.auth, req.body)
+  res.json({result: true})
 })
 
 app.listen(8800)

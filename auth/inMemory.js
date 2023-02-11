@@ -1,4 +1,5 @@
 import { createClient } from 'redis'
+import _ from 'lodash'
 
 import {
   hashKey
@@ -14,13 +15,23 @@ export function registerUser({email, password}) {
   client.hSet(`user:${email}`, 'password', hashPassword)
 }
 
-export function refreshTokenSet({email}, refreshToken) {
+export function setRefreshToken({email}, refreshToken) {
   client.hSet(`user:${email}`, 'refreshLimit', refreshLimit(), 'refreshToken', refreshToken)
 }
 
-export async function userExist({email, password}) {
+export function setUserAttributes({sub}, attributes) {
+  client.hSet(`user:${sub}`, 'applicationId', attributes.applicationId)
+}
+
+export async function userExist({email}) {
+  const user = await client.hGetAll(`user:${email}`)
+  
+  return !(_.isEmpty(user))
+}
+
+export async function authenticate({email, password}) {
   const hashPassword = hashKey(password)
-  const savedPassword = await client.hGet(`user:${email}`, 'password') 
+  const savedPassword = await client.hGet(`user:${email}`, 'password')
 
   return hashPassword === savedPassword
 }

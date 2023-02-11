@@ -3,7 +3,7 @@ import storage from "../utils/storage"
 const baseurl = process.env.REACT_APP_AUTH_ENTRYPOINT
 
 export async function test() {
-  const res = await ( await  fetch(`${baseurl}`, {
+  const res = await ( await (`${baseurl}`, {
     method: 'get',
     headers: {
       'Content-Type': 'Application/json'
@@ -16,13 +16,18 @@ export async function test() {
 
 
 export async function signup(email, password) {
-  const res = await ( await  fetch(`${baseurl}/register`, {
+  const res = await  fetch(`${baseurl}/register`, {
     method: 'post',
     headers: {
       'Content-Type': 'Application/json'
     },
     body: JSON.stringify({email, password})
-  })).json()
-  
-  storage.store(res)
+  })
+
+  if (res.ok) {
+    const token = await res.json()
+    storage.store(token)
+  } else {
+    throw new Error()    
+  }  
 }
