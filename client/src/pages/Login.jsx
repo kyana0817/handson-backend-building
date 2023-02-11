@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 
-import apiClient from '../lib/apiClient'
+import { login } from '../lib/auth'
 
 export default function Login() {
+  const navigate = useNavigate()
   const [ form, setForm ] = useState({
     email: '',
     password: ''
@@ -16,9 +17,14 @@ export default function Login() {
     }))
   }
    
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    apiClient.post('/auth', form)
+    try {
+      await login(form.email, form.password)
+      navigate('/')
+    } catch {
+      //todo
+    }
   }
   
   return (
