@@ -39,3 +39,26 @@ export async function login(email, password) {
     throw new Error()
   }
 }
+
+export async function currentUser() {
+  const token = storage.getToken()
+  
+  if (!token) {
+    return false
+  }
+
+  const res = await fetch(`${baseurl}/state`, {
+    method: 'get',
+    headers: {
+      'Content-Type': 'Application/json',
+      'Authorization': `Bearer ${token}`
+    },
+  })
+
+  if (res.ok) {
+    const { state } = await res.json()
+    return state
+  } else {
+    throw new Error()
+  }  
+}

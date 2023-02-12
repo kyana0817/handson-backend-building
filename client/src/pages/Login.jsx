@@ -29,7 +29,7 @@ export default function Login() {
   
   return (
     <div>
-      <h2 className="authenticate_heading">ログイン フォーム</h2>
+      <h2 className="authenticate-heading">ログイン フォーム</h2>
       <form action="/" onSubmit={handleSubmit}>
         <label>
           メールアドレス
@@ -49,11 +49,11 @@ export default function Login() {
             value={form.password}
           />
         </label>
-        <div className='authenticate_subitem'>
+        <div className='authenticate-subitem'>
 
           <Link to="./signup">サインアップ</Link>
         </div>
-        <div className="authenticate_button">
+        <div className="authenticate-button">
           <input type="submit" value="入力"/>
         </div>
       </form>

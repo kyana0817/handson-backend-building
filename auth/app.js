@@ -60,7 +60,7 @@ app.use(async (req, res, next) => {
     req.auth = { ...data, ...auth }
     next()
   } else {
-    res.json(data)
+    res.status(401).json(data)
   }
 })
 
@@ -71,6 +71,10 @@ app.get('/auth', async (req, res) => {
 app.post('/auth/update', async (req, res) => {
   setUserAttributes(req.auth, req.body)
   res.json({result: true})
+})
+
+app.get('/state', (rew, res) => {
+  res.json({state: true})
 })
 
 app.listen(8800)

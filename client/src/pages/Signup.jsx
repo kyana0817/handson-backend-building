@@ -34,7 +34,7 @@ export default function Signup() {
   
   return (
     <div>
-      <h2 className="authenticate_heading">サインアップ フォーム</h2>
+      <h2 className="authenticate-heading">サインアップ フォーム</h2>
       <form action="/" onSubmit={handleSubmit}>
         <label>
           ユーザーネーム
@@ -52,11 +52,11 @@ export default function Signup() {
           確認パスワード
           <input name="confirm_password" type="password" onChange={handleChange}/>
         </label>
-        <div className='authenticate_subitem'>
+        <div className='authenticate-subitem'>
 
           <Link to="../">ログイン</Link>
         </div>
-        <div className="authenticate_button">
+        <div className="authenticate-button">
           <input type="submit" value="入力"/>
         </div>
       </form>

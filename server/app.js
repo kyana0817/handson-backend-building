@@ -19,10 +19,6 @@ app.use(express.json())
 app.use(cors())
 
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
-
 app.post('/auth', (req, res) => {
   console.log(req.body)
   res.json({message: 'Hello World'})
@@ -54,6 +50,17 @@ app.post('/register', (req, res) => {
         body: JSON.stringify({applicationId: results.insertId})
       })).json()
       res.json(auth)
+    }
+  )
+})
+
+app.post('/post', (req, res) => {
+  const {title, content} = req.body
+  connection.query(
+    `INSERT INTO posts (title, content, user_id) values (?, ?, ?)`,
+    [title, content, 1],
+    (error, results) => {
+      res.json(results)
     }
   )
 })

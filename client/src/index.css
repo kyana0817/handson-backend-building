@@ -29,6 +29,17 @@ input[type="submit"]:hover {
   background: #b2b2b2;
 }
 
+textarea {
+  border: 1px solid #b2b2b2;
+  padding: 4px 8px;
+  font-weight: 500;
+}
+
+::placeholder {
+  font-weight: 700;
+  opacity: 0.5;
+}
+
 h1 {
   font-size: 2rem;
 }
@@ -63,29 +74,73 @@ a {
   text-decoration: underline;
 }
 
-.authenticate_wrap {
+.paper {
+  border: 1px solid #b2b2b2;
+  padding: 16px 16px;
+  background: #fff;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.authenticate-wrap {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.authenticate_paper {
+.authenticate-paper {
   border: 1px solid #b2b2b2;
-  padding: 16px 8px;
+  padding: 16px 16px;
   background: #fff;
   box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
 }
 
-.authenticate_heading {
+.authenticate-heading {
   text-align: center;
 }
 
-.authenticate_subitem {
+.authenticate-subitem {
   text-align: right;
 }
 
-.authenticate_button {
+.authenticate-button {
   margin-top: 16px;
   text-align: right;
+}
+
+.base-wrap {
+  min-height: 100vh;
+  margin: 40px auto 0;
+  width: 90%;
+  max-width: 800px;
+} 
+
+.base-tab {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  list-style: none;
+  border-bottom: 1px solid #b2b2b2;
+
+}
+
+.base-tab a {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-decoration: none;  
+  padding: .2em .5em 0;
+}
+
+.base-tab a:hover {
+  background: #b2b2b2;
+}
+
+.base-form :is(input[type="text"], textarea){
+  width: 100%;
+}
+
+.form-button-area {
+  margin-top: 16px;
+  text-align: right;
+  
 }
