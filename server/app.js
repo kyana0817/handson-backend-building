@@ -31,7 +31,7 @@ app.use(async (req, res, next) => {
     req.token = token
     next()
   } else {
-    res.status(400).json({message: 'Required token'})
+    res.status(401).json({message: 'Required token'})
   }
 })
 
@@ -54,11 +54,32 @@ app.post('/register', (req, res) => {
   )
 })
 
+app.use(async (req, res, next) => {
+  const auth = await fetch ('http://localhost:8800/auth', {
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${req.token}`,
+      'Content-Type': 'Application/json'
+    }
+  })
+
+  const data = await auth.json()
+
+  if (auth.ok) {
+    req.auth = data
+    next()
+  } else {
+    res.status(401).json(data)
+  }
+})
+
+
+
 app.post('/post', (req, res) => {
   const {title, content} = req.body
   connection.query(
     `INSERT INTO posts (title, content, user_id) values (?, ?, ?)`,
-    [title, content, 1],
+    [title, content, req.auth.applicationId],
     (error, results) => {
       res.json(results)
     }
