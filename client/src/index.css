@@ -25,7 +25,7 @@ input[type="submit"] {
   cursor: pointer;
 }
 
-input[type="submit"]:hover {
+input[type="submit"]:is(:hover, :focus) {
   background: #b2b2b2;
 }
 
@@ -74,6 +74,10 @@ a {
   text-decoration: underline;
 }
 
+section {
+  margin-top: 2rem;
+}
+
 .paper {
   border: 1px solid #b2b2b2;
   padding: 16px 16px;
@@ -110,7 +114,8 @@ a {
 
 .base-wrap {
   min-height: 100vh;
-  margin: 40px auto 0;
+  margin: 0 auto;
+  padding-top: 40px;
   width: 90%;
   max-width: 800px;
 } 
@@ -141,6 +146,17 @@ a {
 
 .form-button-area {
   margin-top: 16px;
-  text-align: right;
-  
+  text-align: right; 
+}
+
+.post-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.post-item {
+  width: 200px;
+  height: 230px;
 }

@@ -1,9 +1,9 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import apiClient from "../lib/apiClient"
 
 
-const Form = () => {
+const Form = ({fetchFn}) => {
   const [form, setForm] = useState({
     title: '',
     content: ''
@@ -20,6 +20,7 @@ const Form = () => {
     e.preventDefault()
 
     await apiClient.post('/post', form)
+    await fetchFn()
   }
 
   return (
@@ -53,18 +54,54 @@ const Form = () => {
   )
 }
 
-export default function TimeLine() {
+const PostItem = ({post}) => {
+  return (
+    <div className="paper post-item" key={post.id}>
+      <p>{post.title}</p>
+      <p>{post.content}</p>
+      <p>{post.username}</p>
+    </div>
+  )
 
+}
+
+const PostList = ({posts}) => {
+
+  return (
+    <div className="post-list">
+      {posts.map(post => (
+        <PostItem key={post.id} post={post}/>
+      ))}
+    </div>
+  )
+}
+
+export default function TimeLine() {
+  const [posts, setPosts] = useState([])
+
+  const fetchPost = async () => {
+    const res = await apiClient.get('/post')
+    setPosts(res)
+  }
+
+  useEffect(() => {
+    fetchPost()
+  }, [])
 
   return (
     <>
-      <h2>
-        フォーム
-      </h2>
-      <Form/>
-      <h2>
-        ポスト
-      </h2>
+      <section>
+        <h2>
+          フォーム
+        </h2>
+        <Form fetchFn={fetchPost}/>
+      </section>
+      <section>
+        <h2>
+          ポスト
+        </h2>
+        <PostList posts={posts}/>
+      </section>
     </>
   )
   
