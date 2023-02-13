@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 
+import { useAuth } from '../utils/Authentication'
 import { login } from '../lib/auth'
 
 export default function Login() {
+  const { dispatch } = useAuth()
   const navigate = useNavigate()
   const [ form, setForm ] = useState({
     email: '',
@@ -21,6 +23,7 @@ export default function Login() {
     e.preventDefault()
     try {
       await login(form.email, form.password)
+      dispatch({type: 'login'})
       navigate('/')
     } catch {
       //todo

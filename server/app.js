@@ -93,6 +93,15 @@ app.get('/post', (req, res) => {
   )
 })
 
+// app.get('/post/:postId/comment', (req, res) => {
+//   connection.query(
+//     'INSERT INTO comments ()',
+//     (error, results) => {
+//       res.json(results)
+//     })
+// })
+
+
 app.listen(port, (err) => {
   if (err) console.log(err)
   console.log(`Example app listening on port ${port}`)

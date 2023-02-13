@@ -116,6 +116,7 @@ section {
   min-height: 100vh;
   margin: 0 auto;
   padding-top: 40px;
+  padding-bottom: 30px;
   width: 90%;
   max-width: 800px;
 } 
@@ -158,5 +159,50 @@ section {
 
 .post-item {
   width: 200px;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
   height: 230px;
+}
+
+.post-title {
+  font-weight: 700;
+  border-bottom: 1px solid #b2b2b2;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.post-content {
+  overflow: hidden;
+  word-wrap: break-word;
+}
+
+.post-username {
+  margin-top: auto;
+}
+
+
+.modal-wrap {
+  position: fixed;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background: #33333323;
+}
+
+.modal-wrap.active {
+  display: flex;
+}
+
+.post-detail {
+  max-width: 500px;
+  width: 100%;
 }

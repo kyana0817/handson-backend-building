@@ -1,5 +1,7 @@
 import express from 'express'
 import cors from 'cors'
+import _ from 'lodash'
+
 import {
   jwtIssue,
   refreshTokenIssue,
@@ -54,11 +56,15 @@ app.post('/login', (req, res) => {
 app.use(async (req, res, next) => {
   const token = req.header('Authorization')?.replace(/^Bearer /, '')
   const [verified, data] = verify(token)
+  const {password, ...auth} = await fetchUser(data?.sub)
 
   if (verified) {
-    const {password, ...auth} = await fetchUser(data.sub)
-    req.auth = { ...data, ...auth }
-    next()
+    if (_.isEmpty(auth)) {
+      res.status(401).json({message: 'unknown user'})
+    } else {
+      req.auth = { ...data, ...auth }
+      next()
+    }
   } else {
     res.status(401).json(data)
   }
@@ -73,7 +79,7 @@ app.post('/auth/update', async (req, res) => {
   res.json({result: true})
 })
 
-app.get('/state', (rew, res) => {
+app.get('/state', (req, res) => {
   res.json({state: true})
 })
 
