@@ -47,6 +47,22 @@ class ApiClient {
       throw new Error()
     }
   }
+
+  async delete (path) {
+    const res = await fetch(`${this.basePath}${path}`, {
+      method: 'delete',
+      headers: this.headers()
+    })
+    const data = await res.json()
+    if (res.ok) {
+      return data
+    } else if (data.message === 'token refresh') {
+      await refresh()
+      return await this.delete(path)
+    } else {
+      throw new Error()
+    }
+  }
 }
 
 

@@ -37,7 +37,7 @@ app.use(async (req, res, next) => {
 
 app.post('/register', async (req, res) => {
   const {username, email} = req.body;
-  
+
   const [result, meta] = await connection.query(
     'INSERT INTO users (username, email, created_at) values (?, ?, ?)',
     [username, email,  new Date()]
@@ -79,7 +79,7 @@ app.get('/post', async (req, res) => {
     'SELECT p.*, u.username, u.email FROM posts as p JOIN users as u ON p.user_id = u.id',
   )
 
-  res.json(posts)
+  res.json()
 })
 
 app.post('/post', async (req, res) => {
@@ -113,6 +113,89 @@ app.post('/post/:postId/comment', async (req, res) => {
   )
 
   res.json({id: result.insertId})
+})
+
+app.get('/user', async (req, res) => {
+  const {auth} = req
+
+  const [users, meta] = await connection.query([
+      'SELECT u.username, u.email, COUNT(s.source_id) as source, COUNT(t.target_id) as target',
+      'from users as u',
+      'LEFT JOIN followers as s ON u.id = s.source_id',
+      'LEFT JOIN followers as t ON u.id = t.target_id',
+      'WHERE u.id = ?',
+      'GROUP BY u.id'
+    ].join(' '),
+    [auth.applicationId]
+  )
+
+  
+  res.json(users[0])
+})
+
+app.get('/user/post', async (req, res) => {
+  const {auth} = req
+  
+  const [posts, meta] = await connection.query(
+    'SELECT p.*, u.username, u.email FROM posts as p JOIN users as u ON p.user_id = u.id where u.id = ?',
+    [auth.applicationId]
+    )
+    
+  res.json(posts)
+})
+
+app.get('/user/:userId', async (req, res) => {
+  const {auth} = req
+  const {userId} = req.params
+
+  const [users, meta] = await connection.query([
+      'SELECT u.username, u.email, COUNT(s.source_id) as source, COUNT(t.target_id) as target,',
+      `(CASE WHEN COUNT(t.source_id = ?) = 1 THEN 1 ELSE 0 END) as is_follow`,
+      'from users as u',
+      'LEFT JOIN followers as s ON u.id = s.source_id',
+      'LEFT JOIN followers as t ON u.id = t.target_id',
+      'WHERE u.id = ?',
+      'GROUP BY u.id'
+    ].join(' '),
+    [auth.applicationId, userId]
+    )
+    
+  res.json(users[0])
+})
+
+app.get('/user/:userId/post', async (req, res) => {
+  const {userId} = req.params
+  
+  const [posts, meta] = await connection.query(
+    'SELECT p.*, u.username, u.email FROM posts as p JOIN users as u ON p.user_id = u.id where u.id = ?',
+    [userId]
+  )
+    
+  res.json(posts)
+})
+
+app.get('/follow/:userId', async (req, res) => {
+  const {auth} = req
+  const {userId} = req.params
+
+  const [result, meta] = await connection.query(
+    'INSERT INTO followers (source_id, target_id, created_at) values (?, ?, ?)',
+    [auth.applicationId, userId, new Date()]
+  )
+
+  res.json({id: result.insertId})
+})
+
+app.delete('/follow/:userId', async (req, res) => {
+  const {auth} = req
+  const {userId} = req.params
+
+  const [result, meta] = await connection.query(
+    'DELETE FROM followers WHERE source_id = ? AND target_id = ?',
+    [auth.applicationId, userId]
+  )
+
+  res.json({message: 'hello'})
 })
 
 app.listen(port, (err) => {

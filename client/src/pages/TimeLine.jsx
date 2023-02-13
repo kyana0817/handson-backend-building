@@ -1,60 +1,10 @@
 import { useEffect, useState } from 'react'
 
-import Modal from '../components/Modal'
-import PostContent from '../components/post/Content'
+import Modal from '../components/utils/Modal'
 import PostForm from '../components/post/Form'
-import CommentForm from '../components/comment/Form'
-import CommentContent from '../components/comment/Content'
+import PostList from '../components/post/List'
+import PostDetail from '../components/post/Detail'
 import apiClient from '../lib/apiClient'
-
-
-const CommentList = ({comments}) => (
-  <div className="comment-list">
-    {comments.map(comment => (
-      <CommentContent key={comment.id} comment={comment}/>
-    ))}
-  </div>
-)
-
-const PostDetail = ({post}) => {
-  const [comments, setComments] = useState([])
-  
-  const fetchComment = async () => {
-    const res = await apiClient.get(`/post/${post.id}/comment`)
-    setComments(res)
-  }
-
-  useEffect(() => {
-    fetchComment()
-  }, [])
-  
-  return (
-    <div className="paper post-detail">
-      <PostContent post={post}/>
-      <div>
-        <h3>コメント</h3>
-        <CommentList comments={comments}/>
-        <CommentForm post={post} fetchFn={fetchComment}/>
-      </div>
-    </div>
-  )
-}
-
-const PostItem = ({post, handleClick}) => (
-  <button onClick={handleClick}>
-    <div className="paper post-item">
-      <PostContent post={post}/>
-    </div>
-  </button>
-)
-
-const PostList = ({posts, handleClick}) => (
-  <div className="post-list">
-    {posts.map(post => (
-      <PostItem key={post.id} post={post} handleClick={handleClick(post.id)}/>
-    ))}
-  </div>
-)
 
 
 export default function TimeLine() {
@@ -70,7 +20,6 @@ export default function TimeLine() {
   const handleClose = () => setOpen(false)
 
   const handleClick = (id) => (e) => {
-    console.log(id)
     handleOpen()
     setPost(posts.find(post => post.id === id))
   }

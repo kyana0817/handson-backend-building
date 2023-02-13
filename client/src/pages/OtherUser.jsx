@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 
 import Modal from '../components/utils/Modal'
 import PostDetail from '../components/post/Detail'
 import PostList from '../components/post/List'
 import UserInfo from '../components/user/Info'
 import apiClient from '../lib/apiClient'
-import { useAuth } from '../utils/Authentication'
 
-export default function User() {
+export default function OtherUser() {
   const [user, setUser] = useState({})
   const [posts, setPosts] = useState([])
   const [post, setPost] = useState({})
   const [open, setOpen] = useState(false)
-  const { dispatch } = useAuth()
+  const { userId } = useParams() 
   
   const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
@@ -24,17 +24,23 @@ export default function User() {
   }
 
   const fetchUser = async () => {
-    const res = await apiClient.get('/user')
+    const res = await apiClient.get(`/user/${userId}`)
     setUser(res)
   }
 
   const fetchPost = async () => {
-    const res = await apiClient.get('/user/post')
+    const res = await apiClient.get(`/user/${userId}/post`)
     setPosts(res)
   }
 
-  const handleLogout = () => {
-    dispatch({type: 'logout'})
+  const handleFollow = async () => {
+    await apiClient.get(`/follow/${userId}`)
+    fetchUser()
+  }
+  
+  const handleUnfollow = async () => {
+    await apiClient.delete(`/follow/${userId}`)
+    fetchUser()
   }
 
   useEffect(() => {
@@ -46,15 +52,21 @@ export default function User() {
   return (
     <>
       <section>
-        <h2>あなたの情報</h2>
+        <h2>{user.username}の情報</h2>
         <UserInfo user={user}>
-          <button className="logout" onClick={handleLogout}>
-            ログアウト
-          </button>
+          {user.is_follow? (
+            <button className="follow" onClick={handleUnfollow}>
+              フォローを外す
+            </button>
+          ): (
+            <button className="follow" onClick={handleFollow}>
+              フォローをする
+            </button>
+          )}
         </UserInfo>
       </section>
       <section>
-        <h2>投稿した記事</h2>
+        <h2>{user.username}が投稿した記事</h2>
         <PostList posts={posts} handleClick={handleClick}/>
       </section>
       <Modal open={open} handleClose={handleClose}>
