@@ -20,7 +20,6 @@ app.use(cors())
 
 
 app.post('/auth', (req, res) => {
-  console.log(req.body)
   res.json({message: 'Hello World'})
 })
 
@@ -38,8 +37,8 @@ app.use(async (req, res, next) => {
 app.post('/register', (req, res) => {
   const {username, email} = req.body;
   connection.query(
-    `INSERT INTO users (username, email) values (?, ?)`,
-    [username, email],
+    `INSERT INTO users (username, email, created_at) values (?, ?, ?)`,
+    [username, email,  new Date()],
     async (error, results) => {
       const auth = await (await fetch ('http://localhost:8800/auth/update', {
         method: 'post',
@@ -51,20 +50,20 @@ app.post('/register', (req, res) => {
       })).json()
       res.json(auth)
     }
-    )
-  })
-  
-  app.use(async (req, res, next) => {
-    const auth = await fetch ('http://localhost:8800/auth', {
-      method: 'get',
+  )
+})
+
+app.use(async (req, res, next) => {
+  const auth = await fetch ('http://localhost:8800/auth', {
+    method: 'get',
     headers: {
       'Authorization': `Bearer ${req.token}`,
       'Content-Type': 'Application/json'
     }
   })
-  
+
   const data = await auth.json()
-  
+
   if (auth.ok) {
     req.auth = data
     next()
@@ -76,12 +75,12 @@ app.post('/register', (req, res) => {
 app.post('/post', (req, res) => {
   const {title, content} = req.body
   connection.query(
-    `INSERT INTO posts (title, content, user_id) values (?, ?, ?)`,
-    [title, content, req.auth.applicationId],
+    `INSERT INTO posts (title, content, user_id, created_at) values (?, ?, ?, ?)`,
+    [title, content, req.auth.applicationId, new Date()],
     (error, results) => {
       res.json(results)
     }
-    )
+  )
 })
 
 app.get('/post', (req, res) => {

@@ -33,10 +33,14 @@ export const AuthenticationProvider = ({children}) => {
 
   useEffect(() => {
     (async () => {
-      const user = await currentUser();
-      if (user) {
-        dispatch({type: 'login'})
-      } else {
+      try {
+        const user = await currentUser();
+        if (user) {
+          dispatch({type: 'login'})
+        } else {
+          dispatch({type: 'logout'})
+        }
+      } catch {
         dispatch({type: 'logout'})
       }
     })();

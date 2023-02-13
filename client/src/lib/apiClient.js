@@ -1,4 +1,5 @@
 import storage from "../utils/storage"
+import { refresh } from "./auth"
 
 class ApiClient {
   constructor (basePath) {
@@ -19,9 +20,12 @@ class ApiClient {
       method: 'get',
       headers: this.headers()
     })
-
+    const data = await res.json()
     if (res.ok) {
-      return await res.json()
+      return data
+    } else if (data.message === 'token refresh') {
+      await refresh()
+      return await this.get(path)
     } else {
       throw new Error()
     }
@@ -33,8 +37,12 @@ class ApiClient {
       headers: this.headers(),
       body: JSON.stringify(body)
     })
+    const data = await res.json()
     if (res.ok) {
-      return await res.json()
+      return data
+    } else if (data.message === 'token refresh') {
+      await refresh()
+      return await this.post(path, body)
     } else {
       throw new Error()
     }

@@ -35,7 +35,6 @@ export async function userExist({email}) {
 export async function authenticate({email, password}) {
   const hashPassword = hashKey(password)
   const savedPassword = await client.hGet(`user:${email}`, 'password')
-
   return hashPassword === savedPassword
 }
 

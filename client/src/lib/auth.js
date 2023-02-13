@@ -40,6 +40,29 @@ export async function login(email, password) {
   }
 }
 
+export async function refresh() {
+  const token = storage.getToken()
+  const refreshToken = storage.getRefresh()
+
+  const res = await fetch(`${baseurl}/refresh`, {
+    method: 'post',
+    headers: {
+      'Content-Type': 'Application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({refreshToken})
+  })
+
+  if (res.ok) {
+    const token = await res.json()
+    storage.store(token)
+
+    return true
+  } else {
+    throw new Error()
+  }
+}
+
 export async function currentUser() {
   const token = storage.getToken()
   
@@ -55,10 +78,13 @@ export async function currentUser() {
     },
   })
 
+  const data = await res.json()
+
   if (res.ok) {
-    const { state } = await res.json()
-    return state
+    return data.state
+  } else if (data.message === 'token refresh') {
+    return await refresh()
   } else {
     throw new Error()
-  }  
+  }
 }
