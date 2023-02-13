@@ -75,7 +75,6 @@ export default function TimeLine() {
     setPost(posts.find(post => post.id === id))
   }
 
-
   useEffect(() => {
     fetchPost()
   }, [])

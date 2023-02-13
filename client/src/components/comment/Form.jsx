@@ -20,6 +20,7 @@ export default function CommentForm({post, fetchFn}) {
     setForm({content: ''})
     fetchFn()
   }
+  
   return (
     <>
       <form className="base-form" onSubmit={handleSubmit}>

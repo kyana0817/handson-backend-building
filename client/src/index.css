@@ -161,7 +161,7 @@ section {
   width: 200px;
 }
 
-.detail-content {
+.detail-post {
   display: flex;
   flex-direction: column;
   height: 230px;
@@ -205,4 +205,21 @@ section {
 .post-detail {
   max-width: 500px;
   width: 100%;
+}
+
+.detail-comment {
+  display: flex;
+  padding-bottom: 8px;
+  font-size: 0.84rem;
+}
+
+.comment-username {
+  width: 120px;
+  font-weight: 700;
+}
+
+.comment-content {
+  flex: 1;
+  overflow-wrap: anywhere;
+
 }

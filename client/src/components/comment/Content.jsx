@@ -1,8 +1,8 @@
 export default function CommentContent({comment}) {
   return (
-    <div>
-      <p>{comment.username}:</p>
-      <p>{comment.content}</p>            
+    <div className="detail-comment">
+      <p className="comment-username">{comment.username}:</p>
+      <p className="comment-content">{comment.content}</p>
     </div>
   )
 }
