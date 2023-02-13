@@ -79,7 +79,7 @@ app.get('/post', async (req, res) => {
     'SELECT p.*, u.username, u.email FROM posts as p JOIN users as u ON p.user_id = u.id',
   )
 
-  res.json()
+  res.json(posts)
 })
 
 app.post('/post', async (req, res) => {
