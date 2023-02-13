@@ -92,14 +92,26 @@ app.get('/post', (req, res) => {
   )
 })
 
-// app.get('/post/:postId/comment', (req, res) => {
-//   connection.query(
-//     'INSERT INTO comments ()',
-//     (error, results) => {
-//       res.json(results)
-//     })
-// })
+app.get('/post/:postId/comment', (req, res) => {
+  const { postId } = req.params
+  connection.query(
+    'SELECT u.username, c.content FROM comments as c JOIN users as u ON c.user_id = u.id WHERE c.post_id = ?',
+    [postId],
+    (error, results) => {
+      res.json(results)
+    })
+})
 
+app.post('/post/:postId/comment', (req, res) => {
+  const { content } = req.body
+  const { postId } = req.params
+  connection.query(
+    'INSERT INTO comments (post_id, user_id, content, created_at) values (?, ?, ?, ?)',
+    [postId, req.auth.applicationId, content, new Date()],
+    (error, results) => {
+      res.json(results)
+    })
+})
 
 app.listen(port, (err) => {
   if (err) console.log(err)

@@ -1,143 +1,60 @@
 import { useEffect, useState } from 'react'
 
 import Modal from '../components/Modal'
+import PostContent from '../components/post/Content'
+import PostForm from '../components/post/Form'
+import CommentForm from '../components/comment/Form'
+import CommentContent from '../components/comment/Content'
 import apiClient from '../lib/apiClient'
 
 
-const PostForm = ({fetchFn}) => {
-  const [form, setForm] = useState({
-    title: '',
-    content: ''
-  })
-
-  const handleChange = (e) => {
-    setForm(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
-  }
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    await apiClient.post('/post', form)
-    await fetchFn()
-    setForm({
-      title: '',
-      content: ''
-    })
-  }
-  
-  return (
-    <div className="paper">
-      <form className="base-form" onSubmit={handleSubmit}>
-        <label>
-          <input
-            name="title"
-            type="text"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="タイトル"
-          />
-        </label>
-        <label>
-          <textarea
-            name="content"
-            value={form.content}
-            onChange={handleChange}
-            placeholder="コンテンツ"
-          />
-        </label>
-        <div className="form-button-area">
-          <input
-            type="submit"
-            value="投稿"
-          />
-        </div>
-      </form>
-    </div>
-  )
-}
-
-const CommentForm = () => {
-  const [form, setForm] = useState({
-    content: ''
-  })
-
-  const handleChange = (e) => {
-    setForm(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-
-    // await apiClient.post('')
-  }
-  return (
-    <>
-      <form className="base-form" onSubmit={handleSubmit}>
-        <label>
-          <textarea
-            name="content"
-            value={form.content}
-            onChange={handleChange}
-            placeholder="コメント"
-          />
-        </label>
-        <div className="form-button-area">
-          <input
-            type="submit"
-            value="コメント"
-          />
-        </div>
-      </form>
-    </>
-  )
-}
+const CommentList = ({comments}) => (
+  <div className="comment-list">
+    {comments.map(comment => (
+      <CommentContent key={comment.id} comment={comment}/>
+    ))}
+  </div>
+)
 
 const PostDetail = ({post}) => {
+  const [comments, setComments] = useState([])
+  
+  const fetchComment = async () => {
+    const res = await apiClient.get(`/post/${post.id}/comment`)
+    setComments(res)
+  }
+
+  useEffect(() => {
+    fetchComment()
+  }, [])
+  
   return (
     <div className="paper post-detail">
-      <div className="detail-content">
-        <p className="post-title">{post.title}</p>
-        <p className="post-content">{post.content}</p>
-        <p className="post-username">{post.username}</p>
-      </div>
+      <PostContent post={post}/>
       <div>
         <h3>コメント</h3>
-        <CommentForm/>
+        <CommentList comments={comments}/>
+        <CommentForm post={post} fetchFn={fetchComment}/>
       </div>
     </div>
   )
 }
 
-const PostItem = ({post, handleClick}) => {
-  return (
-    <button onClick={handleClick}>
-      <div className="paper post-item" key={post.id}>
-        <div className="detail-content">
-          <p className="post-title">{post.title}</p>
-          <p className="post-content">{post.content}</p>
-          <p className="post-username">{post.username}</p>
-        </div>
-      </div>
-    </button>
-  )
-
-}
-
-const PostList = ({posts, handleClick}) => {
-  return (
-    <div className="post-list">
-      {posts.map(post => (
-        <PostItem key={post.id} post={post} handleClick={handleClick(post.id)}/>
-      ))}
+const PostItem = ({post, handleClick}) => (
+  <button onClick={handleClick}>
+    <div className="paper post-item">
+      <PostContent post={post}/>
     </div>
-  )
-}
+  </button>
+)
+
+const PostList = ({posts, handleClick}) => (
+  <div className="post-list">
+    {posts.map(post => (
+      <PostItem key={post.id} post={post} handleClick={handleClick(post.id)}/>
+    ))}
+  </div>
+)
 
 
 export default function TimeLine() {
