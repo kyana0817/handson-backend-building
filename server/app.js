@@ -1,9 +1,9 @@
 import express from 'express'
 import cors from 'cors'
-import mysql from 'mysql2'
+import mysql from 'mysql2/promise'
 import fetch from 'node-fetch'
 
-const connection = mysql.createConnection({
+const connection = await mysql.createConnection({
   host: 'localhost',
   user: 'user',
   password: 'password',
@@ -23,6 +23,7 @@ app.post('/auth', (req, res) => {
   res.json({message: 'Hello World'})
 })
 
+
 app.use(async (req, res, next) => {
   const token = req.header('Authorization')?.replace(/^Bearer /, '')
   
@@ -34,25 +35,26 @@ app.use(async (req, res, next) => {
   }
 })
 
-app.post('/register', (req, res) => {
+app.post('/register', async (req, res) => {
   const {username, email} = req.body;
-  connection.query(
-    `INSERT INTO users (username, email, created_at) values (?, ?, ?)`,
-    [username, email,  new Date()],
-    async (error, results) => {
-      const auth = await (await fetch ('http://localhost:8800/auth/update', {
-        method: 'post',
-        headers: {
-          'Authorization': `Bearer ${req.token}`,
-          'Content-Type': 'Application/json'
-        },
-        body: JSON.stringify({applicationId: results.insertId})
-      })).json()
-      res.json(auth)
-    }
+  
+  const [result, meta] = await connection.query(
+    'INSERT INTO users (username, email, created_at) values (?, ?, ?)',
+    [username, email,  new Date()]
   )
-})
+  
+  const auth = await (await fetch ('http://localhost:8800/auth/update', {
+    method: 'post',
+    headers: {
+      'Authorization': `Bearer ${req.token}`,
+      'Content-Type': 'Application/json'
+    },
+    body: JSON.stringify({applicationId: result.insertId})
+  })).json()
 
+  res.json(auth)
+})
+  
 app.use(async (req, res, next) => {
   const auth = await fetch ('http://localhost:8800/auth', {
     method: 'get',
@@ -72,45 +74,45 @@ app.use(async (req, res, next) => {
   }
 })
 
-app.post('/post', (req, res) => {
-  const {title, content} = req.body
-  connection.query(
-    `INSERT INTO posts (title, content, user_id, created_at) values (?, ?, ?, ?)`,
-    [title, content, req.auth.applicationId, new Date()],
-    (error, results) => {
-      res.json(results)
-    }
-  )
-})
-
-app.get('/post', (req, res) => {
-  connection.query(
+app.get('/post', async (req, res) => {
+  const [posts, meta] = await connection.query(
     'SELECT p.*, u.username, u.email FROM posts as p JOIN users as u ON p.user_id = u.id',
-    (error, results) => {
-      res.json(results)
-    }
   )
+
+  res.json(posts)
 })
 
-app.get('/post/:postId/comment', (req, res) => {
+app.post('/post', async (req, res) => {
+  const {title, content} = req.body
+
+  const [result, meta] = await connection.query(
+    `INSERT INTO posts (title, content, user_id, created_at) values (?, ?, ?, ?)`,
+    [title, content, req.auth.applicationId, new Date()]
+  )
+
+  res.json({id: result.insertId})
+})
+
+app.get('/post/:postId/comment', async (req, res) => {
   const { postId } = req.params
-  connection.query(
-    'SELECT u.username, c.content FROM comments as c JOIN users as u ON c.user_id = u.id WHERE c.post_id = ?',
-    [postId],
-    (error, results) => {
-      res.json(results)
-    })
-})
 
-app.post('/post/:postId/comment', (req, res) => {
+  const [comments, meta] = await connection.query(
+    'SELECT u.username, c.content FROM comments as c JOIN users as u ON c.user_id = u.id WHERE c.post_id = ?',
+    [postId]
+  )
+  res.json(comments)
+})
+  
+app.post('/post/:postId/comment', async (req, res) => {
   const { content } = req.body
   const { postId } = req.params
-  connection.query(
+
+  const [result, meta] = await connection.query(
     'INSERT INTO comments (post_id, user_id, content, created_at) values (?, ?, ?, ?)',
-    [postId, req.auth.applicationId, content, new Date()],
-    (error, results) => {
-      res.json(results)
-    })
+    [postId, req.auth.applicationId, content, new Date()]    
+  )
+
+  res.json({id: result.insertId})
 })
 
 app.listen(port, (err) => {
