@@ -129,7 +129,7 @@ graph LR
 Docker コンテナの起動とモジュールのインストールを行います。
 
 ```
-docker-compose -d
+docker-compose up -d
 npm install
 npm run dev
 ```
@@ -175,9 +175,9 @@ http://localhost:8000 にブラウザでアクセスすると Hello World が表
 const app = express()
 const port = 8000
 
-app.get('/', (res, req) => {
-  req.setHeader('Content-Type', 'text/html')
-  req.send(`<html lang="ja">
+app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'text/html')
+  res.send(`<html lang="ja">
 <head>
   <title>Hello World!</title>
 </head>
@@ -205,9 +205,9 @@ JSON形式も書き方ほとんど同じです。
 ```JavaScript
 <-- 省略 -->
 
-app.get('/json', (res, req) => {
-  req.setHeader('Content-Type', 'Application/json')
-  req.send(`{"message": "hello"}`)
+app.get('/json', (req, res) => {
+  res.setHeader('Content-Type', 'Application/json')
+  res.send(`{"message": "hello"}`)
 })
 
 app.listen(port, (err) => {
@@ -226,8 +226,8 @@ jsonメソッドを使用することでヘッダーにコンテンツタイプ�
 ```javascript
 <-- 省略 -->
 
-app.get('/json2', (res, req) => {
-  req.json({message: "hello"})
+app.get('/json2', (req, res) => {
+  res.json({message: "hello"})
 })
 
 app.listen(port, (err) => {
@@ -268,7 +268,7 @@ MySQLへのクエリは、```connection```から行います。
 ```javascript
 <-- 省略 -->
 
-app.get('/db', async (res, req) => {
+app.get('/db', async (req, res) => {
   const [result, meta] = await connection.query('SELECT 42')
   req.json(result)
 })
@@ -333,8 +333,8 @@ export default function Api () {
 ```javascript
 <-- 省略 -->
 
-app.get('/client', (res, req) => {
-  req.json({message: "hello"})
+app.get('/client', (req, res) => {
+  res.json({message: "hello"})
 })
 
 app.listen(port, (err) => {
