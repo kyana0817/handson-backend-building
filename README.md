@@ -399,9 +399,477 @@ corsモジュールのデフォルト設定は、全通信の許可なのでど�
 
 設定後もう一度、Reactのアプリケーションを覗いている見ると、レスポンス結果が表示されていると思います。
 
-## ユーザー認証
+## 6. ユーザー認証
 
-まだ
+### 6-1. トークンの取得
+
+http://localhost:3000/auth/signup にアクセスし、フォーム入力後の通信を確認します。
+
+![register-network](./register-network.png)
+
+１つ目の通信は、認証サーバーにリクエストしている通信になります。
+
+この時点でRedisにユーザーの情報が格納され、レスポンスにユーザーを証明するトークンとそのトークン作り直すためのリフレッシュトークンが返却されます。
+
+```json
+{
+  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJyZWFjdF9oYW5kc29uX2Nvbm5lY3QiLCJpYXQiOjE2NzY4NzA0NTk4NjksInN1YiI6InRlc3RAdGVzdC5jb20iLCJleHAiOjE2NzY5MTM2NTk4Njl9.c9f4040b44dec1df67901ef3a27cda0ca7ed0f12e9ee316241961771d9b0a549"
+  refreshToken: "7ed5c4b7e23c9fe36f0b62ad4f6854b278128cc9e8a3d4532efe282ae29148f1"   
+}
+```
+
+accessToken は、認証が必要なバックエンドへリクエストを行う際に使用します。
+
+リクエスト時のヘッダーに` Authorization`を設定し、その値に`Bearer ${token}`という風に、接頭辞に `Bearer `という文言を付けて、リクエストを送ります。
+
+この`Bearer ` という接頭辞は、ベアラー認証を行う際のお決まりで、決められた生成方法によって生成されたトークンを利用した認証形式のことになります。
+
+今回は、JWTという比較的メジャーな方法でトークンを生成しており、それを利用して認証を行っているので、ベアラー認証ということになります。
+
+ヘッダーにトークンをセットしているコードは、Clientディレクトリ内の`src/lib/apiClient.js`の以下の部分になります。
+
+```javascript
+import storage from "../utils/storage"
+import { refresh } from "./auth"
+
+class ApiClient {
+  constructor (basePath) {
+    this.basePath = basePath
+  }
+
+  headers () {
+    const token = storage.getToken()? `Bearer ${storage.getToken()}`: undefined
+
+    return JSON.parse(JSON.stringify({
+      'Content-Type': 'Application/json',
+      'Authorization': token
+    }))
+  }
+  
+<-- 省略 -->
+```
+
+`apiClient`を通じて、バックエンド側のリクエストを送っているので、トークンを取得したそれ以降のリクエストのヘッダー部分には、以下の様にトークン含まれるようになります。
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJyZWFjdF9oYW5kc29uX2Nvbm5lY3QiLCJpYXQiOjE2NzY4NzA0NTk4NjksInN1YiI6InRlc3RAdGVzdC5jb20iLCJleHAiOjE2NzY5MTM2NTk4Njl9.c9f4040b44dec1df67901ef3a27cda0ca7ed0f12e9ee316241961771d9b0a549
+```
+
+### 6-2. データベースにユーザーの情報を登録
+
+認証情報と同様にバックエンド側のデータベースにも、ユーザーの情報を登録してあげる必要があります。`\register`を作成し、データベースにユーザー情報を登録します。
+
+```javascript
+<-- 省略 -->
+
+app.post('/register', async (req, res) => {
+  const token = req.header('Authorization')?.replace(/^Bearer /, '')
+  if (token) {
+    const payload = req.body;
+
+    const [result, meta] = await connection.query(
+      'INSERT INTO users (username, email, created_at) values (?, ?, ?)',
+      [payload.username, payload.email,  new Date()]
+    )
+    
+    res.json(result)
+  } else {
+    res.status(401).json({message: 'Required token'})
+  }
+})
+
+
+app.listen(port, (err) => {
+  if (err) console.log(err)
+  console.log(`Example app listening on port ${port}`)
+})
+```
+
+`\register`へのリクエストは、ユーザー情報をペイロードによって運ぶので、postメソッドでルートを作成します。
+
+このルートへのリクエストには、トークンが含まれていることが前提になるので、まずヘッダーからトークンを取得します。
+
+`req.body`のペイロード(今回の場合は、ユーザー情報)が入っているので、変数に一度書くのしてあげます。
+
+また、この時のペイロードは、JSON形式で格納されているため、一度JSON形式からJavaScriptのオブジェクト形式に変換してあげる必要があります。
+
+がしかし、ほとんどの通信はJSON形式でやり取りを行うため、全てのルートでJSONからの変換をするとコードの可読性は落ちますし、何よりも面倒です。なので変換するミドルウェアを登録します。
+
+```javascript
+import express from 'express'
+import fetch from 'node-fetch'
+import mysql from 'mysql2/promise'
+import cors from 'cors'
+
+const connection = await mysql.createConnection({
+  host: 'localhost',
+  user: 'user',
+  password: 'password',
+  database: 'example'
+})
+
+const app = express()
+const port = 8000
+
+
+app.use(express.json())
+app.use(cors())
+
+<-- 省略 -->
+```
+
+corsの設定同様に、`use`に`express`の`json()`を登録します。
+
+これで、`req.body`に含まれる値はJavaScriptのオブジェクト形式になりました。
+
+### 6-3. 認証情報のアップデート
+
+認証サーバーに、ユーザーのIDを登録します。
+
+ユーザーのIDを登録することでトークンとユーザーのIDが紐づくので、バックエンド側のリクエストに含まれるトークン情報によって、どのユーザーがリクエストかが判断できるようになります。
+
+`/register`ルートに追記で、認証サーバーへのリクエストを記述します。
+
+```javascript
+<-- 省略 -->
+
+app.post('/register', async (req, res) => {
+  const token = req.header('Authorization')?.replace(/^Bearer /, '')
+  if (token) {
+    const payload = req.body
+
+    const [result, meta] = await connection.query(
+      'INSERT INTO users (username, email, created_at) values (?, ?, ?)',
+      [payload.username, payload.email,  new Date()]
+    )
+    
+    // 追記↓
+    
+    const response = await fetch('http://localhost:8800/auth/update', {
+      method: 'post',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'Application/json'
+      },
+      body: JSON.stringify({applicationId: result.insertId})
+    })
+    
+    const auth = await response.json()
+    
+    res.json(auth)
+  } else {
+    res.status(401).json({message: 'Required token'})
+  }
+})
+
+
+app.listen(port, (err) => {
+  if (err) console.log(err)
+  console.log(`Example app listening on port ${port}`)
+})
+```
+
+fetch APIを使用して、認証サーバーへリクエストを行います。
+
+ヘッダーには、クライアントからリクエストと同様にヘッダーにトークンをセットし、ボディにはユーザーのIDを渡します。
+
+ここまで、ユーザー登録の処理を完了です。
+
+一度Dockerコンテナを落として、リソースを初期化(サインアップ時のデータが残っているため)します。
+
+```
+docker-compose stop
+docker-compose down -v
+docker-compose up -d
+```
+
+また、nodeのサーバーも一度閉じてから、起動し直します。
+
+```
+npm run dev
+```
+
+Dockerコンテナとサーバーが立ち上がったら、http://localhost:3000/auth/signup にアクセスし、デベロッパーツールのネットワークタブを開いてから、ユーザー登録を行います。
+
+最初と同じように、認証サーバーにリクエストが飛んでから、バックエンド側に通信が飛んでいるのが確認できると思います。
+
+んで、バックエンド側からレスポンス結果が`{result: true}`となっていれば、ユーザー登録が完了していることになります。
+
+また、実際どのようにデータが格納されているかは、各リソースにアクセスすることで確認できます。
+
+#### MySQL
+
+```
+docker-compose exec db mysql -u user -ppassword example
+
+mysql> select * from users;
+```
+
+#### Redis
+
+```
+docker-compose exec auth redis-cli
+
+127.0.0.1:6379> auth password
+127.0.0.1:6379> hgetall user:<登録したemail>
+```
+
+### 6-4. サインアップの全体の流れ
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor user as ユーザー
+    participant auth as 認証サーバー
+    participant app as アプリケーションサーバー
+    participant db as MySQL
+    participant redis as Redis
+    user->>auth: ユーザー登録(サインアップ)
+    auth->>auth: トークン(JWT)を生成
+    auth->>redis: ユーザー情報を登録
+    auth->>user: トークン情報を含む、レスポンス
+    user->>app: ユーザー情報とヘッダーにトークンをセット
+    app->>db: ユーザー情報を登録
+    db->>app: 登録したユーザーのIDを取得
+    app->>auth: ユーザーIDとヘッダーにトークンをセット
+    auth->>auth: トークンからユーザー情報を取得
+    auth->>redis: ユーザー情報にユーザーIDを追加
+    auth->>app: 結果をレスポンス
+    app->>user: 結果をレスポンス
+    user->>user: アプリケーションのホーム画面にリダイレクト
+
+```
+
+## 7. ユーザーに紐づいてデータの登録
+
+### 7-1.新規投稿機能
+
+新規投稿機能のバックエンドを実装していきます。
+
+新規投稿機能は、`/post`にリクエストが行われており、リクエストのメソッドはpostになります。
+
+リクエストのペイロードは以下の様な内容になります。
+
+```javascript
+{
+  title: "テスト",
+  content:"こんにちは"
+}
+```
+
+投稿を保存するテーブルは以下の定義になっています。
+
+```mysql
++-------------+--------------+------+-----+---------+----------------+
+| Field       | Type         | Null | Key | Default | Extra          |
++-------------+--------------+------+-----+---------+----------------+
+| id          | int          | NO   | PRI | NULL    | auto_increment |
+| user_id     | int          | NO   | MUL | NULL    |                |
+| title       | varchar(128) | NO   |     | NULL    |                |
+| content     | text         | NO   |     | NULL    |                |
+| created_at  | datetime     | NO   |     | NULL    |                |
+| modified_at | datetime     | YES  |     | NULL    |                |
+| deleted_at  | datetime     | YES  |     | NULL    |                |
++-------------+--------------+------+-----+---------+----------------+
+```
+
+投稿保存するために必要なデータは、title と content、そして投稿したユーザーのIDです。
+
+ユーザーのIDを取得するため、バックエンド側から認証サーバーにリクエストを行います。
+
+```javascript
+<-- 省略 -->
+
+app.post('/post', async (req, res) => {
+  const token = req.header('Authorization')?.replace(/^Bearer /, '')
+  
+  if (token) {    
+    const response = await fetch ('http://localhost:8800/auth', {
+      method: 'get',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'Application/json'
+      }
+    })
+
+    const auth = await response.json()
+
+    if (response.ok) {
+      const payload = req.body
+
+      const [result, meta] = await connection.query(
+        `INSERT INTO posts (title, content, user_id, created_at) values (?, ?, ?, ?)`,
+        [payload.title, payload.content, auth.applicationId, new Date()]
+      )
+
+      res.json({id: result.insertId})
+
+    } else {
+      res.status(401).json(auth)
+    }
+  } else {
+    res.status(401).json({message: 'Required token'})
+  }
+})
+
+app.listen(port, (err) => {
+  if (err) console.log(err)
+  console.log(`Example app listening on port ${port}`)
+})
+```
+
+新規投稿の機能だけでコードが少し長くなってしまいました。
+
+このコードの流れをフローチャートで表すと以下の様になります。
+
+```mermaid
+flowchart
+	A[トークンの確認]
+	B[ユーザーIDの取得]
+	C[データベースに登録]
+	D[サクセスレスポンス]
+	E[エラーレスポンス]
+	F[エラーレスポンス]
+	
+	A-- トークン有り -->B
+	B-- 取得成功 -->C
+	C-->D
+	A-- トークン無し -->E
+	B-- 取得失敗 -->F
+	
+```
+
+フローチャートの中でルート固有の処理は、「データベースに登録」の部分だけです。
+
+「トークンの確認」は、今回のようなアプリケーションでは毎回行われるものであり、「ユーザーIDの取得」もユーザーに紐づくデータベースの操作が行われるたびに必要になります。
+
+このように、繰り返し行われる処理を各ルートに毎回記述していくのは大変なので、「トークンの確認」と「ユーザーIDの取得」をミドルウェアとして定義します。
+
+`/register`ルートの直前に「トークンの確認」を追記します。
+
+```javascript
+<-- 省略 -->
+
+app.use(async (req, res, next) => {
+  const token = req.header('Authorization')?.replace(/^Bearer /, '')
+  
+  if (token) {
+    req.token = token
+    next()
+  } else {
+    res.status(401).json({message: 'Required token'})
+  }
+})
+
+app.post('/register', async (req, res) => {
+  const payload = req.body
+  
+  const [result, meta] = await connection.query(
+    'INSERT INTO users (username, email, created_at) values (?, ?, ?)',
+    [payload.username, payload.email,  new Date()]
+  )
+    
+  const response = await fetch('http://localhost:8800/auth/update', {
+    method: 'post',
+    headers: {
+      'Authorization': `Bearer ${req.token}`,
+      'Content-Type': 'Application/json'
+    },
+    body: JSON.stringify({applicationId: result.insertId})
+  })
+    
+  const auth = await response.json()
+  
+  res.json(auth)
+})
+
+<-- 省略 -->
+
+```
+
+次に、`/register`ルートの直後に「ユーザーIDの取得」を追記します。
+
+```javascript
+app.use(async (req, res, next) => {
+  const auth = await fetch ('http://localhost:8800/auth', {
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${req.token}`,
+      'Content-Type': 'Application/json'
+    }
+  })
+
+  const data = await auth.json()
+
+  if (auth.ok) {
+    req.auth = data
+    next()
+  } else {
+    res.status(401).json(data)
+  }
+})
+
+app.post('/post', async (req, res) => {
+  const payload = req.body
+
+  const [result, meta] = await connection.query(
+    `INSERT INTO posts (title, content, user_id, created_at) values (?, ?, ?, ?)`,
+    [payload.title, payload.content, req.auth.applicationId, new Date()]
+  )
+
+  res.json({id: result.insertId})
+})
+
+app.listen(port, (err) => {
+  if (err) console.log(err)
+  console.log(`Example app listening on port ${port}`)
+})
+```
+
+ミドルウェアの影響範囲は、ミドルウェアの後に定義されたルートや他のミドルウェアになります。
+
+なので、`/post`には「トークンの確認」と「ユーザーIDの取得」の両方が適応されますが、`/register`は「ユーザーIDの取得」よりも先に定義されているので、適応されるのは「トークンの確認」のみになります。
+
+投稿したものがデータベースに登録されているか確認してみましょう。
+
+#### MySQL
+
+```
+docker-compose exec db mysql -u user -ppassword example
+
+mysql> select * from posts;
+```
+
+### 7-2. 投稿物の表示
+
+投稿物の表示機能のバックエンドを実装していきます。
+
+投稿物の表示機能は、`/post`にリクエストが行われており、リクエストのメソッドはgetになります。
+
+```javascript
+app.get('/post', async (req, res) => {
+  const [posts, meta] = await connection.query(
+    'SELECT p.*, u.username, u.email FROM posts as p JOIN users as u ON p.user_id = u.id',
+  )
+
+  res.json(posts)
+})
+
+app.listen(port, (err) => {
+  if (err) console.log(err)
+  console.log(`Example app listening on port ${port}`)
+})
+```
+
+このコードを追加すると画面上に投稿したものが表示されるようになります。
+
+## 8. URLパラメータ
+
+### 8-1. コメント投稿機能
+
+コメント投稿機能のバックエンドを実装していきます。
+
+コメントは投稿物に紐づくので、`/post/:postId/comment`リクエストが行われており、リクエストのメソッドはgetになります。
 
 
 
@@ -411,7 +879,4 @@ corsモジュールのデフォルト設定は、全通信の許可なのでど�
 
 
 
-
-
-
-
+​	
