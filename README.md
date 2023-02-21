@@ -411,7 +411,7 @@ http://localhost:3000/auth/signup にアクセスし、フォーム入力後の�
 
 この時点でRedisにユーザーの情報が格納され、レスポンスにユーザーを証明するトークンとそのトークン作り直すためのリフレッシュトークンが返却されます。
 
-```json
+```javascript
 {
   accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJyZWFjdF9oYW5kc29uX2Nvbm5lY3QiLCJpYXQiOjE2NzY4NzA0NTk4NjksInN1YiI6InRlc3RAdGVzdC5jb20iLCJleHAiOjE2NzY5MTM2NTk4Njl9.c9f4040b44dec1df67901ef3a27cda0ca7ed0f12e9ee316241961771d9b0a549",
   refreshToken: "7ed5c4b7e23c9fe36f0b62ad4f6854b278128cc9e8a3d4532efe282ae29148f1"   
