@@ -31,7 +31,7 @@ class ApiClient {
     }
   }
 
-  async post (path, body) {
+  async post (path, body={}) {
     const res = await fetch(`${this.basePath}${path}`, {
       method: 'post',
       headers: this.headers(),
