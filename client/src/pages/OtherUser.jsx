@@ -34,7 +34,7 @@ export default function OtherUser() {
   }
 
   const handleFollow = async () => {
-    await apiClient.get(`/follow/${userId}`)
+    await apiClient.post(`/follow/${userId}`)
     fetchUser()
   }
   

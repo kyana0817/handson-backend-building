@@ -24,12 +24,12 @@ export default function User() {
   }
 
   const fetchUser = async () => {
-    const res = await apiClient.get('/user')
+    const res = await apiClient.get('/currentUser')
     setUser(res)
   }
 
   const fetchPost = async () => {
-    const res = await apiClient.get('/user/post')
+    const res = await apiClient.get('/currentUser/post')
     setPosts(res)
   }
 
