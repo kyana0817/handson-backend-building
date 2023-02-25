@@ -869,14 +869,191 @@ app.listen(port, (err) => {
 
 コメント投稿機能のバックエンドを実装していきます。
 
+コメントは投稿物に紐づくので、`/post/:postId/comment`リクエストが行われており、リクエストのメソッドはpostになります。
+
+```javascript
+app.post('/post/:postId/comment', async (req, res) => {
+  const params = req.params
+  const payload = req.body
+  const auth = req.auth
+
+  const [result, meta] = await connection.query(
+    'INSERT INTO comments (post_id, user_id, content, created_at) value (?, ?, ?, ?)',
+    [params.postId, auth.applicationId, payload.content, new Date()]
+  )
+
+  res.json({id: result.insertId})
+})
+```
+
+ルートに含まれる`:postId`は、URLパラメータです。
+
+expressではルートに含まれる`:(コロン)`で始まる、パスの部分はURLパラメータとして処理されます。
+
+例えば、
+
+```
+/post/1/comment    <-- postId = 1
+/post/30/comment   <-- postId = 30
+```
+
+になります。
+
+Web APIの設計としてREST APIというものがありますが、REST APIもURLパラメータを使用して、ルートを構成します。
+
+以下は、REST APIのルート構成の例です。
+
+| 機能名     | メソッド | ルート        | 説明                       |
+| ---------- | -------- | ------------- | -------------------------- |
+| ListPost   | GET      | /post         | ポストの一覧を表示         |
+| CreatePost | POST     | /post         | ポストを作成               |
+| UpdatePost | PUT      | /post/:postId | 対象ポストを更新           |
+| DeletePost | DELETE   | /post/:postId | 対象ポストを削除           |
+| DetailPost | GET      | /post/:postId | 対象ポストの詳細情報を表示 |
+
+テーブル内の特定のレコードに対して操作を行う場合には、URLパラメータにプライマリキーを記載してリクエストを送ります。
+
+このように、特定のレコードを対象にする場合によく使用されるもので、URLパラメータが複数になるルートも作れますし、よくあります。
+
+### 8-2. コメント表示機能
+
+コメント表示機能のバックエンドを実装していきます。
+
 コメントは投稿物に紐づくので、`/post/:postId/comment`リクエストが行われており、リクエストのメソッドはgetになります。
 
+```javascript
+app.get('/post/:postId/comment', async (req, res) => {
+  const params = req.params
+
+  const [comments, meta] = await connection.query(
+    'SELECT u.username, c.content FROM comments as c JOIN users as u ON c.user_id = u.id WHERE c.post_id = ?',
+    [params.postId]
+  )
+
+  res.json(comments)
+})
+```
+
+### 8-3. ユーザー詳細機能
+
+ユーザー詳細機能のバックエンドを実装していきます。
+
+`/user/:userId`リクエストが行われており、リクエストのメソッドはgetになります。
+
+また、画面上にはそのユーザーが投稿したものもページに含まれるようにしたいので、同時に`/user/:userId/post`のルートも実装します。
+
+```javascript
+app.get('/user/:userId', async (req, res) => {
+  const auth = req.auth
+  const params = req.params
+
+  const [users, meta] = await connection.query([
+      'SELECT u.username, u.email, COUNT(s.source_id) as source, COUNT(t.target_id) as target,',
+      '(CASE WHEN COUNT(t.source_id = ?) = 1 THEN 1 ELSE 0 END) as is_follow',
+      'FROM users as u',
+      'LEFT JOIN followers as s ON u.id = s.source_id',
+      'LEFT JOIN followers as t ON u.id = t.target_id',
+      'WHERE u.id = ?',
+      'GROUP BY u.id'
+    ].join(' '),
+    [auth.applicationId, params.userId]
+  )
+
+  res.json(users[0])
+})
+
+app.get('/user/:userId/post', async (req, res) => {
+  const {userId} = req.params
+  
+  const [posts, meta] = await connection.query(
+    'SELECT p.*, u.username, u.email FROM posts as p JOIN users as u ON p.user_id = u.id where u.id = ?',
+    [userId]
+  )
+    
+  res.json(posts)
+})
+```
+
+### 8-4. フォロー機能
+
+フォローのバックエンドを実装していきます。
+
+「フォローする」と「フォローを外す」は両方とも同じ`/follow/:userId`リクエストが行われており、「フォローする」のリクエストはpostで「フォローを外す」はdeleteメソッドになります。
+
+```javascript
+app.post('/follow/:userId', async (req, res) => {
+  const auth = req.auth
+  const params = req.params
+
+  const [result, meta] = await connection.query(
+    'INSERT INTO followers (source_id, target_id, created_at) values (?, ?, ?)',
+    [auth.applicationId, params.userId, new Date()]
+  )
+
+  res.json({id: result.insertId})
+})
+
+
+app.delete('/follow/:userId', async (req, res) => {
+  const auth = req.auth
+  const params = req.params
+
+  const [result, meta] = await connection.query(
+    'DELETE FROM followers WHERE source_id = ? AND target_id = ?',
+    [auth.applicationId, params.userId]
+  )
+
+  res.json(result)
+})
+```
+
+### 9. ログインユーザーの詳細
+
+### 9-1.ログインユーザー詳細機能
+
+ログインユーザーの詳細情報を表示する時は、注意が必要です。
+
+大抵のマイページには、プライバシーの観点から他人には、見せてはいけない情報を載せていることがほとんどなので、ユーザー詳細ページと同じルートでのアクセスは不適当です。
+
+ユーザー詳細ページを開くときの情報は、ルートにユーザーのプライマリキーが入るので、その部分の値を変えれば、誰でも簡単にそのユーザーの情報を取得できます。
+
+なので、ログインユーザーのルートでは、URLにプライマリキーを載せるのではなく、通信時に一緒に送信されているトークンを使用します。
+
+`/currentUser`リクエストが行われており、リクエストのメソッドはgetになります。
+
+ついでに、ログインユーザーの詳細ページに表示する投稿物も定義してしまいます。
+
+ログインユーザーの投稿物は`/currentUser/post`にリクエストが行われており、リクエストのメソッドはgetになります。
+
+```
+app.get('/currentUser', async (req, res) => {
+  const auth = req.auth
+
+  const [users, meta] = await connection.query([
+      'SELECT u.username, u.email, COUNT(s.source_id) as source, COUNT(t.target_id) as target',
+      'from users as u',
+      'LEFT JOIN followers as s ON u.id = s.source_id',
+      'LEFT JOIN followers as t ON u.id = t.target_id',
+      'WHERE u.id = ?',
+      'GROUP BY u.id'
+    ].join(' '),
+    [auth.applicationId]
+  )
+
+  res.json(users[0])
+})
+
+app.get('/currentUser/post', async (req, res) => {
+  const auth = req.auth
+  
+  const [posts, meta] = await connection.query(
+    'SELECT p.*, u.username, u.email FROM posts as p JOIN users as u ON p.user_id = u.id where u.id = ?',
+    [auth.applicationId]
+  )
+
+  res.json(posts)
+})
+```
 
 
 
-
-
-
-
-
-​	
