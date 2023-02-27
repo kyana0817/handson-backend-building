@@ -73,7 +73,7 @@ graph LR
   w[Web]
   app[アプリケーション]
   auth[認証]
-  d[(リソース - MySql)]
+  d[(リソース - MySQL)]
   m[(インメモリー - Redis)]
   u ---- w
   u --- app
